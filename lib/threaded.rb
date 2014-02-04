@@ -14,7 +14,7 @@ module Threaded
   @mutex = Mutex.new
 
   def start(options = {})
-    self.master(options)
+    self.master = options
     self.master.start
     return self
   end
@@ -37,8 +37,8 @@ module Threaded
   end
 
   def master(options = {})
-    return @master if @master
     @mutex.synchronize do
+      return @master if @master
       self.logger  = options[:logger]  if options[:logger]
       self.size    = options[:size]    if options[:size]
       self.timeout = options[:timeout] if options[:timeout]
