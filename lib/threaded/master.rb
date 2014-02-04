@@ -25,12 +25,11 @@ module Threaded
     end
 
     def alive?
-      return false if workers.empty?
       workers.detect {|w| w.alive? }
     end
 
     def start
-      return self if alive?
+      @mutex.synchronize { @stopping = false }
       @max.times { new_worker }
       return self
     end
@@ -39,7 +38,9 @@ module Threaded
       poison
       timeout(timeout, "waiting for workers to stop") do
         while self.alive?
-          sleep 0.1
+          @mutex.synchronize do
+            workers.reject! {|w| w.dead? }
+          end
         end
         join
       end
@@ -70,9 +71,7 @@ module Threaded
     end
 
     def poison
-      @mutex.synchronize do
-        @stopping = true
-      end
+      @mutex.synchronize { @stopping = true }
       workers.each {|w| w.poison }
       return self
     end

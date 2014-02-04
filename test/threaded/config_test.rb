@@ -3,8 +3,12 @@ require 'stringio'
 
 class ConfigTest < Test::Unit::TestCase
 
-  def teardown
+  def setup
     Threaded.stop
+  end
+
+  def teardown
+    Threaded.start
   end
 
   def test_config_works

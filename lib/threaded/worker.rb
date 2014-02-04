@@ -20,6 +20,10 @@ module Threaded
       puts "start is deprecated, thread is started when worker created"
     end
 
+    def dead?
+      !alive?
+    end
+
     def alive?
       thread.alive?
     end
