@@ -14,14 +14,7 @@ module Threaded
   @mutex = Mutex.new
 
   def start(options = {})
-    @mutex.synchronize do
-      self.logger  = options[:logger]  if options[:logger]
-      self.size    = options[:size]    if options[:size]
-      self.timeout = options[:timeout] if options[:timeout]
-      self.master  = Master.new(logger:  self.logger,
-                                size:    self.size,
-                                timeout: self.timeout)
-    end
+    self.master(options)
     self.master.start
     return self
   end
@@ -43,20 +36,18 @@ module Threaded
     !started?
   end
 
-  def master
+  def master(options = {})
     return @master if @master
     @mutex.synchronize do
+      self.logger  = options[:logger]  if options[:logger]
+      self.size    = options[:size]    if options[:size]
+      self.timeout = options[:timeout] if options[:timeout]
       @master = Master.new(logger:  self.logger,
                            size:    self.size,
                            timeout: self.timeout)
     end
   end
-
-  def master=(master)
-    @mutex.synchronize do
-      @master = master
-    end
-  end
+  alias :master= :master
 
   def later(&block)
     Threaded::Promise.new(&block).later
