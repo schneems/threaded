@@ -11,20 +11,26 @@ module Threaded
   attr_accessor :inline, :logger, :size, :timeout
   alias :inline? :inline
 
+  @mutex = Mutex.new
+
   def start(options = {})
-    self.logger  = options[:logger]  if options[:logger]
-    self.size    = options[:size]    if options[:size]
-    self.timeout = options[:timeout] if options[:timeout]
-    self.master  = Master.new(logger:  self.logger,
-                              size:    self.size,
-                              timeout: self.timeout)
+    @mutex.synchronize do
+      self.logger  = options[:logger]  if options[:logger]
+      self.size    = options[:size]    if options[:size]
+      self.timeout = options[:timeout] if options[:timeout]
+      self.master  = Master.new(logger:  self.logger,
+                                size:    self.size,
+                                timeout: self.timeout)
+    end
     self.master.start
     return self
   end
 
   def configure(&block)
     raise "Queue is already started, must configure queue before starting" if started?
-    yield self
+    @mutex.synchronize do
+      yield self
+    end
   end
   alias :config  :configure
 
@@ -38,18 +44,28 @@ module Threaded
   end
 
   def master
-    @master
+    return @master if @master
+    @mutex.synchronize do
+      @master = Master.new(logger:  self.logger,
+                           size:    self.size,
+                           timeout: self.timeout)
+    end
   end
 
   def master=(master)
-    @master = master
+    @mutex.synchronize do
+      @master = master
+    end
+  end
+
+  def later(&block)
+    Threaded::Promise.new(&block).later
   end
 
   def enqueue(job, *args)
     if inline?
       job.call(*args)
     else
-      raise NoWorkersError unless started?
       master.enqueue(job, *args)
     end
     return true
@@ -69,3 +85,4 @@ Threaded.logger.level = Logger::INFO
 require 'threaded/errors'
 require 'threaded/worker'
 require 'threaded/master'
+require 'threaded/promise'
