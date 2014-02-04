@@ -8,22 +8,51 @@ require 'threaded/timeout'
 module Threaded
   STOP_TIMEOUT = 10 # seconds
   extend self
-  attr_accessor :inline, :logger, :size, :timeout
-  alias :inline? :inline
 
   @mutex = Mutex.new
 
+  attr_reader :logger, :size, :inline, :timeout
+  alias :inline? :inline
+
+  def inline=(inline)
+    @mutex.synchronize { @inline = inline }
+  end
+
+  def logger=(logger)
+    @mutex.synchronize { @logger = logger }
+  end
+
+  def size=(size)
+    @mutex.synchronize { @size = size }
+  end
+
+  def timeout=(timeout)
+    @mutex.synchronize { @timeout = timeout }
+  end
+
   def start(options = {})
-    self.master = options
+    self.logger  = options[:logger]  if options[:logger]
+    self.size    = options[:size]    if options[:size]
+    self.timeout = options[:timeout] if options[:timeout]
     self.master.start
     return self
   end
 
+  def master
+    @mutex.synchronize do
+      return @master if @master
+      @master = Master.new(logger:  self.logger,
+                           size:    self.size,
+                           timeout: self.timeout)
+    end
+    @master
+  end
+  alias :master= :master
+
+
   def configure(&block)
     raise "Queue is already started, must configure queue before starting" if started?
-    @mutex.synchronize do
-      yield self
-    end
+    yield self
   end
   alias :config  :configure
 
@@ -35,19 +64,6 @@ module Threaded
   def stopped?
     !started?
   end
-
-  def master(options = {})
-    @mutex.synchronize do
-      return @master if @master
-      self.logger  = options[:logger]  if options[:logger]
-      self.size    = options[:size]    if options[:size]
-      self.timeout = options[:timeout] if options[:timeout]
-      @master = Master.new(logger:  self.logger,
-                           size:    self.size,
-                           timeout: self.timeout)
-    end
-  end
-  alias :master= :master
 
   def later(&block)
     Threaded::Promise.new(&block).later
