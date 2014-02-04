@@ -2,8 +2,7 @@
 
 [![Build Status](https://travis-ci.org/schneems/threaded.png?branch=master)](https://travis-ci.org/schneems/threaded)
 
-
-A simple non-durable in memory queue for running background tasks using threads.
+Simpler than actors, easier than threads. Get threaded!
 
 ## Why
 
