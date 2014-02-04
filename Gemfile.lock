@@ -15,6 +15,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  mocha
-  rake
+  mocha (~> 1.0)
+  rake (~> 10.1)
   threaded!
