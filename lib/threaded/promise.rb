@@ -29,15 +29,14 @@ module Threaded
       @mutex.synchronize do
         return true if running? || has_run?
         begin
-          if @job
-            @running = true
-            @result  = @job.call
-          else
-            raise NoJobError
-          end
+          raise NoJobError unless @job
+          @running = true
+          @result  = @job.call
         rescue Exception => error
           @error   = error
         ensure
+          @stdout = Thread.current[:stdout].dup if Thread.current[:stdout]
+          Thread.current[:stdout] = nil
           @has_run = true
         end
       end
@@ -46,12 +45,14 @@ module Threaded
     def now
       wait_for_it!
       raise error, error.message, error.backtrace if error
+      puts @stdout.string if @stdout
       @result
     end
     alias :join  :now
     alias :value :now
 
     private
+
     def wait_for_it!
       return true if has_run?
 
@@ -63,18 +64,3 @@ module Threaded
     end
   end
 end
-
-# job = Threaded.later do
-
-
-# end
-
-# job.now
-
-# job = Threaded::Promise.new
-# job.enqueue do
-
-
-# end
-
-# job.now

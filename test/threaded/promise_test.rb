@@ -17,4 +17,27 @@ class PromiseTest < Test::Unit::TestCase
     promise1.value
     promise2.value
   end
+
+
+  def test_stdout_stdio
+    value = "foo"
+    promise = Threaded.later do
+      puts value
+    end
+    promise.join
+    assert_match value, promise.instance_variable_get("@stdout").string
+  end
+
+  def test_no_sync_stdio
+    Threaded.sync_promise_io = false
+
+    value = "foo"
+    promise = Threaded.later do
+      puts value
+    end
+    promise.join
+    assert_equal nil, promise.instance_variable_get("@stdout")
+  ensure
+    Threaded.sync_promise_io = true
+  end
 end

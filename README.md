@@ -8,7 +8,6 @@ Simpler than actors, easier than threads. Get threaded!
 
 Why wait? If you're doing IO in MRI, or really anything in JRuby you can speed up your programs dramatically by using threads. Threads however are a low level primitive in Ruby that can be difficult to use. For a primer on threads check out [Working with Ruby Threads](http://www.jstorimer.com/products/working-with-ruby-threads). Threaded implements a few common thread patterns into an easy to use interface letting you focus on writing your code and letting Threaded worry about running that code as fast as possible. Threaded currently includes a threaded background queue, a thread pool, and promises.
 
-Threaded does not use any fancy "metaprogramming" and prefers explicit fast execution over semantic beauty. The internals should be "simple", easy to read, and easy to debug.
 
 ## Install
 
@@ -58,16 +57,50 @@ end
 This code guarantees that the block in `curl` gets executed before the `YAML.load`. Of course, the outcome is the same:
 
 ```ruby
-yaml.value #=> ["ruby-2.0.0", "ruby-1.9.3", # ...
+yaml.value # => ["ruby-2.0.0", "ruby-1.9.3", # ...
 ```
 
 While a contrived example, you can use this type of promise chaining to parallelize complex tasks.
 
 By the way, if you call `Threaded.later` and never call `value` on the returned object it may run but is not guaranteed to. So if you `value` your "promises" then you'll always keep them.
 
+## Promise STDOUT behavior
+
+A Threaded `later` block is supposed to look and feel like regular code. The biggest difference is that as soon as you define a `Threaded.later {}` block it begins to run in the background. Nothing throws off the illusion of "normal" code than sporadic random lines in your STDOUT. So by default Threaded captures all promise stdout and only outputs it when `value` is called.
+
+```
+task = Threaded.later do
+  puts "HEY YOU GUYS!!!!"
+  10 * 10
+end
+```
+
+At this point the task has already run, but `"HEY YOU GUYS!!!"` is nowhere to be seen in STDOUT. It will show up as soon as you request the value
+
+
+```
+puts task.value
+HEY YOU GUYS!!!!
+# => 100
+```
+
+If you don't like this voodoo and want to see really jumbled up STDIO, it's okay. You can set `Threaded.sync_promise_io = false`
+
+```
+task = Threaded.later do
+  puts "HEY YOU GUYS!!!!"
+  10 * 10
+end
+# => "HEY YOU GUYS!!!"
+task.value
+# => 100
+```
+
+You can also set this value in a `config` block. For more info on how this feature is accomplished see `std_thread_out.rb`.
+
 ## Background Queue
 
-The engine that power's `threaded` promises is also a publicly available background queue! You may be familiar with `resque` or `sidekiq` that allow you to enqueue jobs to be run later threaded has something like that. The main difference is that threaded does not persist values to a permanent store (like resque or PostgreSQL). Here's how you use it.
+The engine that powers the `Threaded` promises is also a publicly available background queue! You may be familiar with `Resque` or `sidekiq` that allow you to enqueue jobs to be run later, threaded has something like that. The main difference is that threaded does not persist values to a permanent store (like Resque or PostgreSQL). Here's how you use it.
 
 Define your task to be processed:
 
@@ -80,7 +113,7 @@ class Archive
 end
 ```
 
-It can be any object that responds to `call` but we recommend a class or module which makes switching to a durable queue system (like resque) later easier.
+It can be any object that responds to `call` but we recommend a class or module which makes switching to a durable queue system (like Resque) easier.
 
 Then to enqueue a task to be run in the background use `Threaded.enqueue`:
 
@@ -102,14 +135,6 @@ Threaded.config do |config|
 end
 ```
 
-By default jobs have a timeout value of 60 seconds. Since this is an in-memory queue (goes away when your process terminates) it is in your best interests to keep jobs small and quick, and not overload the queue. You can configure a different timeout on start:
-
-```ruby
-Threaded.config do |config|
-  config.timeout = 90 # timeout is in seconds
-end
-```
-
 Want a different logger? Specify a different Logger:
 
 ```ruby
@@ -118,10 +143,10 @@ Threaded.config do |config|
 end
 ```
 
-As soon as you call `enqueue` a new thread will be added to your thread pool if it is needed, if you wish to explicitly start all threads you can call `Threaded.start`. You can also inline your config if you want when you start the queue:
+As soon as you call `enqueue` a new thread will be added to your thread pool if it is needed. If you wish to explicitly start all threads you can call `Threaded.start`. You can also inline your config if you want when you start the queue:
 
 ```ruby
-Threaded.start(size: 5, timeout: 90, logger: Logger.new(STDOUT))
+Threaded.start(size: 5, logger: Logger.new(STDOUT))
 ```
 
 For testing or guaranteed code execution use the `inline` option:
@@ -140,7 +165,7 @@ All other threading concerns remain true so be careful for using things like `Di
 
 It is possible for you to enqueue more things in your queue than can be processed before your program exits (you hit CTRL+C, or get an exception). When your program exits all jobs promises and enqueued jobs go away as they are not persisted to disk. If you care about your data getting run always call `value` on promises. When `value` is called on promises if it has not already started running it will be run immediately. This functionality allows for the chaining of promises.
 
-To truly preserve data you've `enqueued` into Threaded's background queue you need to switch to a durable queue backend like resque. Alternatively use a promise and call `value` on the `Threaded.later` promise object.
+To truly preserve data you've `enqueued` into Threaded's background queue you need to switch to a durable queue backend like Resque. Alternatively use a promise and call `value` on the `Threaded.later` promise object.
 
 ## License
 

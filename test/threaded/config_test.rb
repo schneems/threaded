@@ -15,18 +15,15 @@ class ConfigTest < Test::Unit::TestCase
     fake_out = StringIO.new
     logger   = Logger.new(fake_out)
     size     = rand(1..99)
-    timeout  = rand(1..99)
 
     Threaded.configure do |config|
       config.size    = size
       config.logger  = logger
-      config.timeout = timeout
     end
 
     Threaded.start
 
     assert_equal size,    Threaded.size
-    assert_equal timeout, Threaded.timeout
     assert_equal logger,  Threaded.logger
   end
 
@@ -36,7 +33,6 @@ class ConfigTest < Test::Unit::TestCase
       Threaded.configure do |config|
         config.size    = size
         config.logger  = logger
-        config.timeout = timeout
       end
     end
   end

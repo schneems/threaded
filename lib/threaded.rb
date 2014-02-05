@@ -1,9 +1,9 @@
 require 'thread'
 require 'timeout'
 require 'logger'
+require 'stringio'
 
 require 'threaded/version'
-require 'threaded/timeout'
 
 module Threaded
   STOP_TIMEOUT = 10 # seconds
@@ -11,7 +11,8 @@ module Threaded
 
   @mutex = Mutex.new
 
-  attr_reader :logger, :size, :inline, :timeout
+  attr_reader :logger, :size, :inline, :sync_promise_io
+  alias :sync_promise_io? :sync_promise_io
   alias :inline? :inline
 
   def inline=(inline)
@@ -26,14 +27,16 @@ module Threaded
     @mutex.synchronize { @size = size }
   end
 
-  def timeout=(timeout)
-    @mutex.synchronize { @timeout = timeout }
+  def sync_promise_io=(sync_promise_io)
+    @mutex.synchronize { @sync_promise_io = sync_promise_io }
   end
+  @sync_promise_io = true
 
   def start(options = {})
-    self.logger  = options[:logger]  if options[:logger]
-    self.size    = options[:size]    if options[:size]
-    self.timeout = options[:timeout] if options[:timeout]
+    raise "Queue is already started, must configure queue before starting" if options.any? && started?
+    options.each do |k, v|
+      self.send(k, v)
+    end
     self.master.start
     return self
   end
@@ -42,8 +45,7 @@ module Threaded
     @mutex.synchronize do
       return @master if @master
       @master = Master.new(logger:  self.logger,
-                           size:    self.size,
-                           timeout: self.timeout)
+                           size:    self.size)
     end
     @master
   end
@@ -65,7 +67,15 @@ module Threaded
   end
 
   def later(&block)
-    Threaded::Promise.new(&block).later
+    job = if sync_promise_io?
+      Proc.new {
+        Thread.current[:stdout] = StringIO.new
+        Threaded::StdThreadOut.instance_eval(&block)
+      }
+    else
+      block
+    end
+    Threaded::Promise.new(&job).later
   end
 
   def enqueue(job, *args)
@@ -89,6 +99,7 @@ Threaded.logger.level = Logger::INFO
 
 
 require 'threaded/errors'
+require 'threaded/std_thread_out'
 require 'threaded/worker'
 require 'threaded/master'
 require 'threaded/promise'
