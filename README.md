@@ -67,7 +67,7 @@ By the way, if you call `Threaded.later` and never call `value` on the returned 
 
 A Threaded `later` block is supposed to look and feel like regular code. The biggest difference is that as soon as you define a `Threaded.later {}` block it begins to run in the background. Nothing throws off the illusion of "normal" code than sporadic random lines in your STDOUT. So by default Threaded captures all promise stdout and only outputs it when `value` is called.
 
-```
+```ruby
 task = Threaded.later do
   puts "HEY YOU GUYS!!!!"
   10 * 10
@@ -77,7 +77,7 @@ end
 At this point the task has already run, but `"HEY YOU GUYS!!!"` is nowhere to be seen in STDOUT. It will show up as soon as you request the value
 
 
-```
+```ruby
 puts task.value
 HEY YOU GUYS!!!!
 # => 100
@@ -85,7 +85,7 @@ HEY YOU GUYS!!!!
 
 If you don't like this voodoo and want to see really jumbled up STDIO, it's okay. You can set `Threaded.sync_promise_io = false`
 
-```
+```ruby
 task = Threaded.later do
   puts "HEY YOU GUYS!!!!"
   10 * 10
