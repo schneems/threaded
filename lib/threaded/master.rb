@@ -25,24 +25,23 @@ module Threaded
     end
 
     def alive?
-      workers.detect {|w| w.alive? }
+      !stopping?
     end
 
     def start
-      @mutex.synchronize { @stopping = false }
-      @max.times { new_worker }
+      new_workers(@max, true)
       return self
     end
 
     def stop(timeout = 10)
-      poison
-      timeout(timeout, "waiting for workers to stop") do
-        while self.alive?
-          @mutex.synchronize do
-            workers.reject! {|w| w.dead? }
+      @mutex.synchronize do
+        @stopping = true
+        workers.each {|w| w.poison }
+        timeout(timeout, "waiting for workers to stop") do
+          while self.alive?
+            workers.reject! {|w| w.join if w.dead? }
           end
         end
-        join
       end
       return self
     end
@@ -57,23 +56,24 @@ module Threaded
       size < @max
     end
 
-    def new_worker
+    def max_workers?
+      !needs_workers?
+    end
+
+    def stopping?
+      @stopping
+    end
+
+    def new_worker(num = 1, force_start = false)
       @mutex.synchronize do
-        return false unless needs_workers?
-        return false if @stopping
-        @workers << Worker.new(@queue, timeout: @timeout)
+        @stopping = false if force_start
+        return false      if stopping?
+        num.times do
+          next if max_workers?
+          @workers << Worker.new(@queue, timeout: @timeout)
+        end
       end
     end
-
-    def join
-      workers.each {|w| w.join }
-      return self
-    end
-
-    def poison
-      @mutex.synchronize { @stopping = true }
-      workers.each {|w| w.poison }
-      return self
-    end
+    alias :new_workers :new_worker
   end
 end

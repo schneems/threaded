@@ -57,7 +57,6 @@ module Threaded
   alias :config  :configure
 
   def started?
-    return false unless master
     master.alive?
   end
 
