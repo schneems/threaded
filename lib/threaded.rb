@@ -57,11 +57,11 @@ module Threaded
   alias :config  :configure
 
   def started?
-    master.alive?
+    !stopped?
   end
 
   def stopped?
-    !started?
+    master.stopping?
   end
 
   def later(&block)

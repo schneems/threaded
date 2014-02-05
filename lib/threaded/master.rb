@@ -20,12 +20,8 @@ module Threaded
       @queue.enq([job, json])
 
       new_worker if needs_workers? && @queue.size > 0
-      raise NoWorkersError unless alive?
+      raise NoWorkersError unless workers.detect {|w| w.alive? }
       return true
-    end
-
-    def alive?
-      !stopping?
     end
 
     def start
@@ -38,7 +34,7 @@ module Threaded
         @stopping = true
         workers.each {|w| w.poison }
         timeout(timeout, "waiting for workers to stop") do
-          while self.alive?
+          while workers.any?
             workers.reject! {|w| w.join if w.dead? }
           end
         end
@@ -50,6 +46,10 @@ module Threaded
       @workers.size
     end
 
+    def stopping?
+      @stopping
+    end
+
     private
 
     def needs_workers?
@@ -58,10 +58,6 @@ module Threaded
 
     def max_workers?
       !needs_workers?
-    end
-
-    def stopping?
-      @stopping
     end
 
     def new_worker(num = 1, force_start = false)
