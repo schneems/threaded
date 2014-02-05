@@ -40,4 +40,21 @@ class PromiseTest < Test::Unit::TestCase
   ensure
     Threaded.sync_promise_io = true
   end
+
+  class Dummy
+    def later(num)
+      Threaded.later do
+        process(num)
+      end
+    end
+
+    def process(num)
+      Dummy.process(num)
+    end
+  end
+
+  def test_scope
+    Dummy.expects(:process).with(1).once
+    Dummy.new.later(1).value
+  end
 end

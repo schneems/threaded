@@ -44,8 +44,8 @@ module Threaded
   def master
     @mutex.synchronize do
       return @master if @master
-      @master = Master.new(logger:  self.logger,
-                           size:    self.size)
+      @master = Master.new(logger: self.logger,
+                           size:   self.size)
     end
     @master
   end
@@ -70,7 +70,7 @@ module Threaded
     job = if sync_promise_io?
       Proc.new {
         Thread.current[:stdout] = StringIO.new
-        Threaded::StdThreadOut.instance_eval(&block)
+        block.call
       }
     else
       block
@@ -99,7 +99,7 @@ Threaded.logger.level = Logger::INFO
 
 
 require 'threaded/errors'
-require 'threaded/std_thread_out'
+require 'threaded/ext/stdout'
 require 'threaded/worker'
 require 'threaded/master'
 require 'threaded/promise'
