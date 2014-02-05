@@ -97,6 +97,48 @@ task.value
 
 You can also set this value in a `config` block.
 
+## Noisey Shell Sessions
+
+Output from other shell sessions will still show up as soon as they execute.
+
+```
+Threaded.later do
+  `git clone git@github.com:schneems/threaded.git`
+end
+=> #<Threaded::Promise:0x007fd51c0a9b98 @mutex=#<Mutex:0x007fd51c0a9b20>, @has_run=false, @running=true, @result=nil, @error=nil, @job=#<Proc:0x007fd51c0a9bc0@/Users/schneems/Documents/projects/threaded/lib/threaded.rb:71>>
+remote: Counting objects: 221, done.
+remote: Compressing objects: 100% (130/130), done.
+remote: Total 221 (delta 115), reused 188 (delta 83)
+Receiving objects: 100% (221/221), 29.62 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (115/115), done.
+```
+
+You can get around this by redirecting the IO:
+
+```
+out = `git clone git@github.com:schneems/threaded.git 2>/dev/null`
+puts out
+```
+
+Note: git does some weird things when you try to redirect stderr to stdio `2>&1` (http://stackoverflow.com/a/18006967/147390)
+
+By using a library to direct the sub shell stdin, stdout, stderr like `Open3`:
+
+```
+require 'open3'
+Open3.popen3("git clone git@github.com:schneems/threaded.git") do |stdin, stdout, stderr, wait_thr|
+  puts stdout.read.chomp
+  puts stderr.read.chomp
+end
+```
+
+Or by running the command in a `--quiet` option if it has one:
+
+```
+`git clone git@github.com:schneems/threaded.git --quiet`
+```
+
+
 ## Background Queue
 
 The engine that powers the `Threaded` promise is also a publicly available background queue! You may be familiar with `Resque` or `sidekiq` that allow you to enqueue jobs to be run later, threaded has something like that. The main difference is that threaded does not persist values to a permanent store (like Resque or PostgreSQL). Here's how you use it.
