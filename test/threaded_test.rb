@@ -38,5 +38,4 @@ class ThreadedTest < Test::Unit::TestCase
     Threaded.stop # gives time to process to finish
     Threaded.start
   end
-
 end
