@@ -40,5 +40,4 @@ class ConfigTest < Test::Unit::TestCase
       end
     end
   end
-
 end
