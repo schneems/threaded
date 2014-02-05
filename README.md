@@ -6,8 +6,7 @@ Simpler than actors, easier than threads. Get threaded!
 
 ## What
 
-Why wait? If you're doing IO in MRI, or really anything in JRuby you can speed up your programs dramatically by using threads. Threads however are a low level primitive in Ruby that can be difficult to use. For a primer on threads check out [Working with Ruby Threads](http://www.jstorimer.com/products/working-with-ruby-threads). Threaded implements a few common thread patterns into an easy to use interface letting you focus on writing your code and letting Threaded worry about running that code as fast as possible. Threaded currently includes a threaded background queue, a thread pool, and promises.
-
+Why wait? If you're doing IO in MRI, or really anything in JRuby you can speed up your programs dramatically by using threads. Threads however are a low level primitive in Ruby that can be difficult to use. The `Threaded` library implements a few common thread patterns into an easy to use interface. This lets you focus on writing your code and `Threaded` will worry about running that code as fast as possible.
 
 ## Install
 
@@ -96,11 +95,11 @@ task.value
 # => 100
 ```
 
-You can also set this value in a `config` block. For more info on how this feature is accomplished see `std_thread_out.rb`.
+You can also set this value in a `config` block.
 
 ## Background Queue
 
-The engine that powers the `Threaded` promises is also a publicly available background queue! You may be familiar with `Resque` or `sidekiq` that allow you to enqueue jobs to be run later, threaded has something like that. The main difference is that threaded does not persist values to a permanent store (like Resque or PostgreSQL). Here's how you use it.
+The engine that powers the `Threaded` promise is also a publicly available background queue! You may be familiar with `Resque` or `sidekiq` that allow you to enqueue jobs to be run later, threaded has something like that. The main difference is that threaded does not persist values to a permanent store (like Resque or PostgreSQL). Here's how you use it.
 
 Define your task to be processed:
 
