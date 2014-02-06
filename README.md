@@ -119,8 +119,9 @@ You can get around this by redirecting the IO:
 out = `git clone git@github.com:schneems/threaded.git 2>/dev/null`
 puts out
 ```
+In bash `1` is stdout, `2` is stderror. You can redirect a stream to another, for example to merge stderr into stdout you could run a command with `2>&1` at the end. To completely disregard output you can send it to `/dev/null` on unix systems.
 
-Note: git does some weird things when you try to redirect stderr to stdio `2>&1` (http://stackoverflow.com/a/18006967/147390)
+Note: git does some weird things when you try to redirect stderr to stdio `2>&1` (http://stackoverflow.com/a/18006967/147390).
 
 By using a library to direct the sub shell stdin, stdout, stderr like `Open3`:
 
@@ -137,7 +138,6 @@ Or by running the command in a `--quiet` option if it has one:
 ```
 `git clone git@github.com:schneems/threaded.git --quiet`
 ```
-
 
 ## Background Queue
 

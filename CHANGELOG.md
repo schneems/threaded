@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Fix sync stdout code.
+
 ## 0.0.3
 
 - Remove Gemfile.lock
