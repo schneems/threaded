@@ -91,6 +91,8 @@ module Threaded
     return true
   end
 
+  # Tells the threadpool master to begin cleaning up jobs and stop
+  # @see Threaded::Master#stop
   def stop(timeout = STOP_TIMEOUT)
     return true unless master
     master.stop(timeout)
