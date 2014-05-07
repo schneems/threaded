@@ -32,6 +32,10 @@ module Threaded
   end
   @sync_promise_io = true
 
+  # Starts a threadpool master
+  # Threaded can still be used without explicitly starting but threads will be
+  # added to the pool lazilly. 
+  # @see Threaded::Master#start
   def start(options = {})
     raise "Queue is already started, must configure queue before starting" if options.any? && started?
     options.each do |k, v|
